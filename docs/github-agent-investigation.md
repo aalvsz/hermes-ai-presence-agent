@@ -28,7 +28,7 @@ Investigation date: 2026-08-14. Repositories were cloned read-only and inspected
 ```text
 aipresence parent (evidence and approval verifier)
 ├── x-account-curator
-│   └── official archive parser + isolated visible browser + action ledger
+│   └── official archive parser + official xurl OAuth/API backend + action ledger
 ├── ai-news-scout
 │   └── balanced feed/API collector + evidence-linked draft queue
 └── paper-reimplementation-lab
@@ -50,7 +50,7 @@ The parent may invoke all three concurrently for an interactive request. Schedul
 
 ## Known external constraints
 
-- X's official API/CLI route requires a developer application and may require paid access. The implemented browser route avoids requesting those secrets but remains dependent on current UI selectors and must stop on uncertainty.
+- X's official `xurl` API/CLI route requires a developer application and may require paid access. It is the default write backend. App credentials and tokens remain in xurl's local store and are never read or committed. The browser fallback remains dependent on current UI selectors and must stop on uncertainty or automation restrictions.
 - X archives generally provide the liked post's publication timestamp, not when the user clicked Like. A date-range cleanup of likes therefore uses and discloses that proxy.
 - Reddit may rate-limit anonymous RSS. The collector records the source error and continues; it does not evade the limit.
 - A ChatGPT subscription's available models and limits are account-side state. Configuration alone is not proof that a real `gpt-5.6-luna` request is permitted.

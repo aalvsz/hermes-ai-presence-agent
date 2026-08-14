@@ -4,6 +4,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { login, publishApproved } from "./x-browser.mjs";
+import { normalizeXBackend, publishApprovedXurl, verifyXurlAccount } from "./x-api.mjs";
 
 async function atomicJson(filePath, value) {
   const temporary = `${filePath}.tmp`;
@@ -13,16 +14,19 @@ async function atomicJson(filePath, value) {
 
 function parse(argv) {
   const [command, ...rest] = argv;
-  const args = { command };
+  const args = { command, backend: process.env.HERMES_X_BACKEND ?? "xurl", app: process.env.HERMES_X_APP ?? "hermes-ai-presence" };
   for (let i = 0; i < rest.length; i += 1) {
     if (rest[i] === "--id") args.id = rest[++i];
     else if (rest[i] === "--profile") args.profileDir = rest[++i];
     else if (rest[i] === "--username") args.username = rest[++i];
+    else if (rest[i] === "--backend") args.backend = rest[++i];
+    else if (rest[i] === "--app") args.app = rest[++i];
     else throw new Error(`Unknown option: ${rest[i]}`);
   }
   if (!["login", "post"].includes(command)) throw new Error("command must be login or post");
   if (command === "post" && !args.id) throw new Error("post requires --id");
   if (command === "post" && !args.username) throw new Error("post requires --username so the active X account can be verified");
+  args.backend = normalizeXBackend(args.backend);
   return args;
 }
 
@@ -31,15 +35,23 @@ async function main() {
   const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
   const runtimeRoot = path.resolve(process.env.HERMES_PRESENCE_RUNTIME ?? path.join(projectRoot, "runtime"));
   const profileDir = path.resolve(args.profileDir ?? path.join(runtimeRoot, "browser-profile"));
+  if (args.command === "login" && args.backend === "xurl") {
+    if (!args.username) throw new Error("xurl verification requires --username");
+    await verifyXurlAccount({ expectedUsername: args.username, app: args.app });
+    console.log(JSON.stringify({ status: "xurl-auth-verified", app: args.app }));
+    return;
+  }
   if (args.command === "login") { const account = await login({ profileDir }); console.log(JSON.stringify({ status: "logged-in-profile-verified", profileDir, ...account })); return; }
   const draftPath = path.join(runtimeRoot, "content", `${args.id}.json`);
   const draft = JSON.parse(await fs.readFile(draftPath, "utf8"));
   let submitting = false;
   try {
-    const result = await publishApproved({
+    const publisher = args.backend === "xurl" ? publishApprovedXurl : publishApproved;
+    const result = await publisher({
       draft,
       profileDir,
       username: args.username,
+      app: args.app,
       onSubmitting: async () => {
         submitting = true;
         draft.state = "publishing";

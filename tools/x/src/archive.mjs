@@ -52,14 +52,22 @@ async function prepareArchive(inputPath, workDir) {
   }
 }
 
-function dateRange({ start, end, timezone }) {
+export function dateRange({ start, end, timezone }) {
   const startLocal = DateTime.fromISO(start, { zone: timezone, setZone: true }).startOf("day");
   const endLocal = DateTime.fromISO(end, { zone: timezone, setZone: true }).endOf("day");
   if (!startLocal.isValid || !endLocal.isValid || !/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
     throw new Error("--start and --end must use YYYY-MM-DD");
   }
   if (startLocal > endLocal) throw new Error("--start must not be after --end");
-  return { startMs: startLocal.toUTC().toMillis(), endMs: endLocal.toUTC().toMillis(), startUTC: startLocal.toUTC().toISO(), endUTC: endLocal.toUTC().toISO() };
+  const endExclusive = endLocal.plus({ milliseconds: 1 });
+  return {
+    startMs: startLocal.toUTC().toMillis(),
+    endMs: endLocal.toUTC().toMillis(),
+    endExclusiveMs: endExclusive.toUTC().toMillis(),
+    startUTC: startLocal.toUTC().toISO(),
+    endUTC: endLocal.toUTC().toISO(),
+    endExclusiveUTC: endExclusive.toUTC().toISO({ suppressMilliseconds: true }),
+  };
 }
 
 export function snowflakeDateMs(id) {
@@ -121,5 +129,18 @@ export function summarizeTargets(analysis) {
     const items = analysis.targets.filter((item) => item.kind === kind);
     categories[kind] = { count: items.length, oldest: items[0]?.dateISO ?? null, newest: items.at(-1)?.dateISO ?? null, samples: [...items.slice(0, 2), ...items.slice(-2)].filter((item, index, array) => array.findIndex((other) => other.id === item.id) === index) };
   }
-  return { generatedAt: new Date().toISOString(), account: analysis.account, start: analysis.start, end: analysis.end, timezone: analysis.timezone, startUTC: analysis.startUTC, endUTC: analysis.endUTC, total: analysis.targets.length, categories, likeDateWarning: "Likes use the liked post publication time because the X archive normally omits the time of the Like action." };
+  return {
+    generatedAt: new Date().toISOString(),
+    source: analysis.source ?? "x-archive",
+    account: analysis.account,
+    start: analysis.start,
+    end: analysis.end,
+    timezone: analysis.timezone,
+    startUTC: analysis.startUTC,
+    endUTC: analysis.endUTC,
+    total: analysis.targets.length,
+    categories,
+    likeDateWarning: "Likes use the liked post publication time because X does not expose the time of the Like action in the archive or Likes API.",
+    completenessWarning: analysis.completenessWarning ?? null,
+  };
 }

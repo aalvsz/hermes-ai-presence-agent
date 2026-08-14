@@ -15,7 +15,7 @@ metadata:
 
 ## Collect
 
-Run `python3 tools/news_scout.py --since-hours 72 --limit 60 --write-snapshot` from the project root. Use the normalized results as leads. Supplement them with current X discussion only when authenticated tooling is available; social posts never replace a primary source.
+Run `python3 tools/news_scout.py --since-hours 72 --limit 60 --write-snapshot` from the project root. Use the normalized results as leads. Supplement them with current X discussion only when authenticated tooling is available and the user has explicitly approved any pay-per-use API budget; a scheduled run never authorizes spend. Social posts never replace a primary source.
 
 Coverage must include:
 
