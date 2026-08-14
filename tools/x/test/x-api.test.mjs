@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { commandForTarget, executeCleanupXurl, extractXurlPostId, normalizeXBackend, publishApprovedXurl, verifyXurlAccount } from "../src/x-api.mjs";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { cleanupResult, commandForTarget, executeCleanupXurl, extractXurlPostId, normalizeXBackend, publishApprovedXurl, verifyXurlAccount } from "../src/x-api.mjs";
 
 test("normalizes the official API backend", () => {
   assert.equal(normalizeXBackend(), "xurl");
@@ -13,6 +16,13 @@ test("maps cleanup targets to official xurl commands", () => {
   assert.deepEqual(commandForTarget({ kind: "reply", id: "2" }), ["delete", "2"]);
   assert.deepEqual(commandForTarget({ kind: "like", id: "3" }), ["unlike", "3"]);
   assert.deepEqual(commandForTarget({ kind: "repost", id: "4" }), ["unrepost", "4"]);
+});
+
+test("accepts only verified cleanup receipts", () => {
+  assert.equal(cleanupResult("delete", { data: { deleted: true } }), "deleted");
+  assert.equal(cleanupResult("unlike", { data: { liked: false } }), "unliked");
+  assert.equal(cleanupResult("unrepost", { data: { retweeted: false } }), "undone");
+  assert.throws(() => cleanupResult("delete", { data: { deleted: false } }), /no verified delete receipt/);
 });
 
 test("extracts an xurl post receipt", () => {
@@ -64,4 +74,25 @@ test("rejects cleanup before account lookup when confirmation is wrong", async (
     confirm: async () => "NO",
   }), /nothing was changed/);
   assert.equal(calls, 0);
+});
+
+test("stores exact-plan approval and resumes without repeating completed actions", async () => {
+  const workDir = await fs.mkdtemp(path.join(os.tmpdir(), "x-cleanup-"));
+  const analysis = {
+    start: "2025-01-01",
+    end: "2025-01-02",
+    account: { username: "approved-account" },
+    targets: [{ kind: "post", id: "1", dateMs: 1, url: "https://x.com/i/web/status/1" }],
+  };
+  const calls = [];
+  const run = async (args) => {
+    calls.push(args);
+    if (args.includes("whoami")) return { data: { username: "approved-account" } };
+    return { data: { deleted: true } };
+  };
+  await executeCleanupXurl({ analysis, workDir, delayMs: 0, run, confirm: async () => "DELETE RANGE 2025-01-01 2025-01-02" });
+  const firstDeleteCount = calls.filter((args) => args.includes("delete")).length;
+  await executeCleanupXurl({ analysis, workDir, delayMs: 0, run, reuseApproval: true, confirm: async () => { throw new Error("must not prompt"); } });
+  assert.equal(firstDeleteCount, 1);
+  assert.equal(calls.filter((args) => args.includes("delete")).length, 1);
 });

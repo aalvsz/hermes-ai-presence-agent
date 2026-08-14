@@ -15,7 +15,7 @@ This repository contains no user identity, account handle, credential, OAuth gra
 Public actions are never inferred:
 
 - Scheduled jobs create drafts only.
-- X cleanup requires a fresh archive preview, active-account match, exact `DELETE RANGE <start> <end>` confirmation, and batches of at most ten actions.
+- X cleanup requires a fresh preview, active-account match, and exact `DELETE RANGE <start> <end>` confirmation. The API-only automatic mode is resumable, rate-limited, and reuses approval only when the stored plan hash still matches exactly.
 - Posting requires `APPROVE POST <draft-id>` and a returned post ID. An unknown result is not retried automatically.
 - GitHub repository creation or push requires a reviewed destination, visibility, license, commit, tests, claims, and disclosure.
 
@@ -104,6 +104,11 @@ cd tools/x
 node src/cleanup-cli.mjs --archive /path/to/twitter-archive.zip \
   --start 2025-01-01 --end 2025-12-31 --timezone Europe/Madrid
 
+# Or discover the range through the official X API; no archive required.
+# This is billable under X's current pay-per-use pricing.
+node src/cleanup-cli.mjs --api \
+  --start 2006-03-21 --end 2025-12-31 --timezone Europe/Madrid
+
 # Verify the official xurl OAuth connection without exposing credentials.
 # Register/authenticate xurl manually first; never paste secrets into an agent.
 node src/publish-cli.mjs login --backend xurl --username YOUR_X_HANDLE
@@ -131,7 +136,21 @@ node src/cleanup-cli.mjs --archive /path/to/twitter-archive.zip \
   --limit 10 --execute --backend xurl
 ```
 
-Likes are selected using the liked post's publication timestamp because the official X archive normally omits the time when the Like action occurred.
+After reviewing an API preview, execute the entire plan automatically with a rate-safe delay and a resumable local ledger:
+
+```bash
+cd tools/x
+node src/cleanup-cli.mjs --api \
+  --start 2006-03-21 --end 2025-12-31 --timezone Europe/Madrid \
+  --execute-all
+
+# If X stops the run at a daily limit, resume the exact already-approved plan later:
+node src/cleanup-cli.mjs --api \
+  --start 2006-03-21 --end 2025-12-31 --timezone Europe/Madrid \
+  --execute-all --resume-approved
+```
+
+API cleanup has two explicit completeness boundaries. X documents that the user Posts timeline returns at most the 3,200 most recent posts. X also does not expose the time when a Like action occurred, so Likes are selected using the liked post's publication timestamp. The automatic mode defaults to 20 seconds between writes, checkpoints every successful action, stops on the first unexpected response, and can resume without repeating completed actions.
 
 The default write backend is the official [`xurl`](https://github.com/xdevplatform/xurl) OAuth/API client. Browser automation remains an explicit `--backend browser` fallback but is never used to bypass an X automation restriction and never imports cookies from Safari or another personal browser.
 

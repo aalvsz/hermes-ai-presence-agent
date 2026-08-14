@@ -3,6 +3,7 @@ import path from "node:path";
 import readline from "node:readline/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import crypto from "node:crypto";
 
 const execFileAsync = promisify(execFile);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -18,6 +19,13 @@ export function commandForTarget(target) {
   if (target.kind === "like") return ["unlike", String(target.id)];
   if (target.kind === "repost") return ["unrepost", String(target.id)];
   throw new Error(`Unsupported X cleanup target kind: ${target.kind}`);
+}
+
+export function cleanupResult(command, payload) {
+  if (command === "delete" && payload?.data?.deleted === true) return "deleted";
+  if (command === "unlike" && payload?.data?.liked === false) return "unliked";
+  if (command === "unrepost" && (payload?.data?.retweeted === false || payload?.data?.reposted === false)) return "undone";
+  throw new Error(`X returned no verified ${command} receipt; execution stopped without marking the action complete`);
 }
 
 export function extractXurlPostId(payload) {
@@ -77,16 +85,39 @@ export async function publishApprovedXurl({ draft, username, app = "hermes-ai-pr
   return { receipt: `https://x.com/i/web/status/${postId}`, postId, postedAt: new Date().toISOString() };
 }
 
-export async function executeCleanupXurl({ analysis, workDir, delayMs, limit, app = "hermes-ai-presence", run = runXurl, confirm = terminalPrompt }) {
-  const required = `DELETE RANGE ${analysis.start} ${analysis.end}`;
-  const phrase = await confirm(`Type exactly "${required}" to continue: `);
-  if (phrase !== required) throw new Error("Confirmation did not match; nothing was changed");
-  await verifyXurlAccount({ expectedUsername: analysis.account?.username, app, run });
+function cleanupPlanHash(analysis) {
+  const plan = {
+    account: String(analysis.account?.username ?? "").toLowerCase(),
+    start: analysis.start,
+    end: analysis.end,
+    targets: analysis.targets.map((target) => `${target.kind}:${target.id}`).sort(),
+  };
+  return crypto.createHash("sha256").update(JSON.stringify(plan)).digest("hex");
+}
+
+export async function executeCleanupXurl({ analysis, workDir, delayMs, limit, app = "hermes-ai-presence", run = runXurl, confirm = terminalPrompt, reuseApproval = false }) {
+  const planHash = cleanupPlanHash(analysis);
   const stateFile = path.join(workDir, "execution-state.json");
-  let state = { start: analysis.start, end: analysis.end, completed: {}, events: [] };
+  const account = String(analysis.account?.username ?? "").replace(/^@/, "").toLowerCase();
+  let state = { start: analysis.start, end: analysis.end, account, completed: {}, events: [] };
   try { state = JSON.parse(await fs.readFile(stateFile, "utf8")); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
   if (state.start !== analysis.start || state.end !== analysis.end) throw new Error("Existing execution state belongs to a different date range");
+  if (state.account && state.account !== account) throw new Error("Existing execution state belongs to a different X account");
+  state.account = account;
+  if (reuseApproval) {
+    if (state.approvedPlanHash !== planHash) throw new Error("No stored approval matches this exact cleanup plan; run once without --resume-approved");
+  } else {
+    const required = `DELETE RANGE ${analysis.start} ${analysis.end}`;
+    const phrase = await confirm(`Type exactly "${required}" to continue: `);
+    if (phrase !== required) throw new Error("Confirmation did not match; nothing was changed");
+  }
+  await verifyXurlAccount({ expectedUsername: analysis.account?.username, app, run });
+  if (!reuseApproval) {
+    state.approvedPlanHash = planHash;
+    state.approvedAt = new Date().toISOString();
+    await atomicJson(stateFile, state);
+  }
   const order = { like: 0, repost: 1, reply: 2, post: 3 };
   const pending = analysis.targets
     .filter((target) => !state.completed[`${target.kind}:${target.id}`])
@@ -96,8 +127,8 @@ export async function executeCleanupXurl({ analysis, workDir, delayMs, limit, ap
     const target = pending[index];
     const key = `${target.kind}:${target.id}`;
     const [command, id] = commandForTarget(target);
-    await run(["--app", app, command, id, "--auth", "oauth2", "--username", String(analysis.account.username).replace(/^@/, "")]);
-    const result = command === "delete" ? "deleted" : command === "unlike" ? "unliked" : "undone";
+    const payload = await run(["--app", app, command, id, "--auth", "oauth2", "--username", String(analysis.account.username).replace(/^@/, "")]);
+    const result = cleanupResult(command, payload);
     state.completed[key] = { at: new Date().toISOString(), result };
     state.events.push({ at: new Date().toISOString(), key, result, url: target.url });
     await atomicJson(stateFile, state);

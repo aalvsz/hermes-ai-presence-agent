@@ -13,12 +13,12 @@ Project tools live under `tools/x/` and `tools/content_queue.py`; all persisted 
 
 ## Cleanup
 
-1. Require an official X archive ZIP or extracted archive. Never crawl the whole account and guess dates from the UI.
+1. Use either an official X archive or `cleanup-cli.mjs --api`. The API path must use official `xurl` OAuth, never UI scraping, and disclose current X API charges before it runs.
 2. Run `cleanup-cli.mjs` without `--execute` for the requested inclusive date range and timezone.
 3. Report counts for likes, reposts, replies, and posts plus the oldest/newest boundary examples.
-4. Explain that X archives usually identify the liked post's publication date, not the date the user clicked Like.
+4. Explain that neither the archive nor the Likes API normally identifies when the user clicked Like; selection uses the liked post's publication date. Also disclose the API user-timeline limit of the 3,200 most recent posts.
 5. Require the exact phrase `DELETE RANGE <start> <end>`.
-6. First real batch is at most ten actions. Prefer the official `xurl` OAuth/API backend, maintain the execution ledger, and stop on rate limits, authorization errors, unexpected responses, or account warnings.
+6. Default to a first real batch of at most ten actions. If the user explicitly requests automatic cleanup after reviewing the preview and cost, `--execute-all` may continue with a rate-safe delay and checkpoint after every action. `--resume-approved` is valid only when the stored plan hash matches exactly. Stop on authorization errors, unexpected responses, or account warnings; rate-limit stops are resumed later from the ledger.
 
 Never use a different range because an earlier run or memory mentioned one.
 
