@@ -1,0 +1,42 @@
+.DS_Store
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+runtime/
+*.log
+preview-*.json
+coverage/
+.coverage
+
+# Never commit local authentication or browser state.
+.env
+.env.*
+auth.json
+browser-profile/
+.xurl/
+
+# Never commit Hermes/Codex runtime or private agent context.
+.hermes/
+.codex/
+memories/
+sessions/
+logs/
+workspace/
+plans/
+home/
+state.db*
+hermes_state.db*
+response_store.db*
+execution-state.json
+AGENTS.md
+CLAUDE.md
+.cursorrules
+autoresearch.md
+results.tsv
+
+# Account exports and local overrides remain local.
+*twitter-archive*.zip
+*x-archive*.zip
+*.local.yaml
+*.local.json

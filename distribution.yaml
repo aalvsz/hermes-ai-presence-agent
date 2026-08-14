@@ -1,0 +1,13 @@
+name: ai-presence
+version: 0.1.0
+description: "Evidence-led AI/ML news, guarded X curation, and paper reimplementation with approval-gated public actions."
+hermes_requires: ">=0.20.1"
+license: MIT
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills/
+  - tools/
+  - config/
+  - scripts/
+  - distribution.yaml
