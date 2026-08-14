@@ -17,6 +17,7 @@ The profile distribution contains behavior, skills, deterministic tools, and mod
 
 - Cron jobs are draft-only.
 - X writes require active-account verification and artifact-specific approval.
+- The default X backend is the official `xurl` OAuth/API client; its credential store is local-only and must never be read by the agent.
 - Destructive X cleanup is archive-based, preview-first, resumable, delayed, and limited to ten actions per invocation.
 - A post is marked published only after its returned ID is captured. Unknown outcomes are quarantined to prevent duplicate retries.
 - GitHub and X publication are separate approvals. Local experiment work never implies public-write authority.

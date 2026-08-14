@@ -4,9 +4,10 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { loadTargets, summarizeTargets } from "./archive.mjs";
+import { executeCleanupXurl, normalizeXBackend } from "./x-api.mjs";
 
 function parseArgs(argv) {
-  const args = { timezone: "Europe/Madrid", delayMs: 3500, execute: false };
+  const args = { timezone: "Europe/Madrid", delayMs: 3500, execute: false, backend: process.env.HERMES_X_BACKEND ?? "xurl", app: process.env.HERMES_X_APP ?? "hermes-ai-presence" };
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
     if (token === "--archive") args.archivePath = argv[++i];
@@ -17,6 +18,8 @@ function parseArgs(argv) {
     else if (token === "--delay-ms") args.delayMs = Number(argv[++i]);
     else if (token === "--limit") args.limit = Number(argv[++i]);
     else if (token === "--profile") args.profileDir = argv[++i];
+    else if (token === "--backend") args.backend = argv[++i];
+    else if (token === "--app") args.app = argv[++i];
     else if (token === "--execute") args.execute = true;
     else throw new Error(`Unknown option: ${token}`);
   }
@@ -24,6 +27,7 @@ function parseArgs(argv) {
   if (!Number.isFinite(args.delayMs) || args.delayMs < 2000) throw new Error("--delay-ms must be at least 2000");
   if (args.limit !== undefined && (!Number.isInteger(args.limit) || args.limit < 1)) throw new Error("--limit must be a positive integer");
   if (args.execute && (args.limit === undefined || args.limit > 10)) throw new Error("--execute requires --limit between 1 and 10; rerun reviewed batches to continue");
+  args.backend = normalizeXBackend(args.backend);
   return args;
 }
 
@@ -42,7 +46,9 @@ async function main() {
   if (!args.execute) return;
   if (!analysis.account?.username) throw new Error("The archive has no account username; pass --username so the active account can be verified");
   const { executeCleanup } = await import("./x-browser.mjs");
-  const result = await executeCleanup({ analysis, workDir, profileDir: path.resolve(args.profileDir ?? path.join(runtimeRoot, "browser-profile")), delayMs: args.delayMs, limit: args.limit });
+  const result = args.backend === "xurl"
+    ? await executeCleanupXurl({ analysis, workDir, delayMs: args.delayMs, limit: args.limit, app: args.app })
+    : await executeCleanup({ analysis, workDir, profileDir: path.resolve(args.profileDir ?? path.join(runtimeRoot, "browser-profile")), delayMs: args.delayMs, limit: args.limit });
   console.log(JSON.stringify({ mode: "execute", result }, null, 2));
 }
 

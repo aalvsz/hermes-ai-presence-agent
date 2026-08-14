@@ -7,6 +7,14 @@ const RATE_LIMIT = /rate limit|try again later|too many requests|límite de soli
 const CHALLENGE = /captcha|verify you are human|verifica que eres humano|arkose/i;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+async function launchProfile(profileDir) {
+  await fs.mkdir(profileDir, { recursive: true });
+  return chromium.launchPersistentContext(profileDir, {
+    headless: false,
+    viewport: { width: 1280, height: 900 },
+  });
+}
+
 async function atomicJson(filePath, value) {
   const temporary = `${filePath}.tmp`;
   await fs.writeFile(temporary, JSON.stringify(value, null, 2));
@@ -54,8 +62,7 @@ async function verifyExpectedAccount(page, expectedUsername) {
 }
 
 export async function login({ profileDir }) {
-  await fs.mkdir(profileDir, { recursive: true });
-  const context = await chromium.launchPersistentContext(profileDir, { headless: false, viewport: { width: 1280, height: 900 } });
+  const context = await launchProfile(profileDir);
   try {
     const page = context.pages()[0] ?? await context.newPage();
     await ensureLoggedIn(page, true);
@@ -108,8 +115,7 @@ export async function executeCleanup({ analysis, workDir, profileDir, delayMs, l
   const required = `DELETE RANGE ${analysis.start} ${analysis.end}`;
   const phrase = await terminalPrompt(`Type exactly "${required}" to continue: `);
   if (phrase !== required) throw new Error("Confirmation did not match; nothing was changed");
-  await fs.mkdir(profileDir, { recursive: true });
-  const context = await chromium.launchPersistentContext(profileDir, { headless: false, viewport: { width: 1280, height: 900 } });
+  const context = await launchProfile(profileDir);
   const page = context.pages()[0] ?? await context.newPage();
   const stateFile = path.join(workDir, "execution-state.json");
   let state = { start: analysis.start, end: analysis.end, completed: {}, events: [] };
@@ -165,7 +171,7 @@ export function extractCreatedPostId(payload) {
 export async function publishApproved({ draft, profileDir, username, onSubmitting = async () => {} }) {
   if (draft.state !== "approved" || draft.approval?.phrase !== `APPROVE POST ${draft.id}`) throw new Error("Draft does not carry the exact approval record");
   if (draft.kind !== "tweet") throw new Error("Browser publisher currently supports single tweets only");
-  const context = await chromium.launchPersistentContext(profileDir, { headless: false, viewport: { width: 1280, height: 900 } });
+  const context = await launchProfile(profileDir);
   try {
     const page = context.pages()[0] ?? await context.newPage();
     await ensureLoggedIn(page, false);

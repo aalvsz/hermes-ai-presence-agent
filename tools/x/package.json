@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/archive.mjs && node --check src/x-browser.mjs && node --check src/cleanup-cli.mjs && node --check src/publish-cli.mjs && node --test"
+    "check": "node --check src/archive.mjs && node --check src/x-api.mjs && node --check src/x-browser.mjs && node --check src/cleanup-cli.mjs && node --check src/publish-cli.mjs && node --test"
   },
   "dependencies": {
     "adm-zip": "^0.6.0",

@@ -2,7 +2,7 @@
 
 A portable [Nous Research Hermes Agent](https://github.com/NousResearch/hermes-agent) distribution for evidence-led AI/ML publishing. It coordinates three isolated specialists:
 
-1. **X account curator** — previews a user-selected date range and, only after exact confirmation, removes posts, replies, reposts, and likes. It can publish one specifically approved draft through an isolated local browser profile.
+1. **X account curator** — previews a user-selected date range and, only after exact confirmation, removes posts, replies, reposts, and likes. It publishes specifically approved drafts through X's official `xurl` OAuth/API client.
 2. **AI news scout/editor** — scans primary AI/ML sources, arXiv, Hugging Face Daily Papers, selected subreddits, and Sebastian Raschka's Ahead of AI. Scheduled runs create source-linked drafts only.
 3. **Paper reimplementation lab** — selects a current paper, creates an isolated local experiment, records successes and failures, and prepares approval-gated GitHub and X artifacts.
 
@@ -23,7 +23,7 @@ See [SECURITY.md](SECURITY.md) for the threat model and [docs/github-agent-inves
 
 ## Install as a Hermes distribution
 
-Prerequisites: Hermes Agent `>=0.20.1`, Python `>=3.11`, Node.js `>=20`, npm, and Chromium support.
+Prerequisites: Hermes Agent `>=0.20.1`, Python `>=3.11`, Node.js `>=20`, npm, Chromium support for the optional browser fallback, and the official [`xurl`](https://github.com/xdevplatform/xurl) CLI for X writes.
 
 ```bash
 git clone REPOSITORY_URL hermes-ai-presence-agent
@@ -32,6 +32,21 @@ cd hermes-ai-presence-agent
 ```
 
 The bootstrap installs or updates the `ai-presence` profile, creates its command alias, installs locked Node dependencies, installs Playwright Chromium, and runs the local test suite. It does not request or copy credentials.
+
+Install `xurl` from its official package, create an X developer app with Read and Write permission and redirect URI `http://localhost:8080/callback`, then register and authenticate it manually. Never paste its client secret into an agent or commit its local store:
+
+```bash
+npm install -g @xdevplatform/xurl
+read "xurl_id?Client ID: "
+read -s "xurl_secret?Client Secret: "; echo
+xurl auth apps add hermes-ai-presence \
+  --client-id "$xurl_id" --client-secret "$xurl_secret" \
+  --redirect-uri http://localhost:8080/callback
+unset xurl_id xurl_secret
+xurl auth oauth2 --app hermes-ai-presence
+xurl auth default hermes-ai-presence
+xurl auth status
+```
 
 ## Plug in a model
 
@@ -89,8 +104,9 @@ cd tools/x
 node src/cleanup-cli.mjs --archive /path/to/twitter-archive.zip \
   --start 2025-01-01 --end 2025-12-31 --timezone Europe/Madrid
 
-# Establish the isolated X browser login interactively
-node src/publish-cli.mjs login
+# Verify the official xurl OAuth connection without exposing credentials.
+# Register/authenticate xurl manually first; never paste secrets into an agent.
+node src/publish-cli.mjs login --backend xurl --username YOUR_X_HANDLE
 ```
 
 Runtime state defaults to `runtime/` and is ignored by Git. Override it with `HERMES_PRESENCE_RUNTIME` when needed.
@@ -103,7 +119,7 @@ Approve and publish exactly one draft:
 python3 tools/content_queue.py approve DRAFT_ID \
   --confirmation "APPROVE POST DRAFT_ID"
 cd tools/x
-node src/publish-cli.mjs post --id DRAFT_ID --username YOUR_X_HANDLE
+node src/publish-cli.mjs post --id DRAFT_ID --username YOUR_X_HANDLE --backend xurl
 ```
 
 Execute at most ten reviewed cleanup actions:
@@ -112,10 +128,12 @@ Execute at most ten reviewed cleanup actions:
 cd tools/x
 node src/cleanup-cli.mjs --archive /path/to/twitter-archive.zip \
   --start 2025-01-01 --end 2025-12-31 --timezone Europe/Madrid \
-  --limit 10 --execute
+  --limit 10 --execute --backend xurl
 ```
 
 Likes are selected using the liked post's publication timestamp because the official X archive normally omits the time when the Like action occurred.
+
+The default write backend is the official [`xurl`](https://github.com/xdevplatform/xurl) OAuth/API client. Browser automation remains an explicit `--backend browser` fallback but is never used to bypass an X automation restriction and never imports cookies from Safari or another personal browser.
 
 ## Evidence boundary
 
