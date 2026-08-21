@@ -1,0 +1,11 @@
+name: work-queue-briefing
+version: 0.2.0
+description: "Read-only summaries of open GitHub and GitLab work assigned to the authenticated user."
+hermes_requires: ">=0.20.1"
+license: MIT
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - profile.yaml
+  - tools/
+  - distribution.yaml

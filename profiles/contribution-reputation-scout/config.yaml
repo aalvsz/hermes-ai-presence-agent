@@ -1,0 +1,36 @@
+_config_version: 37
+model:
+  provider: openai-codex
+  default: gpt-5.6-luna
+agent:
+  reasoning_effort: xhigh
+  verify_on_stop: false
+toolsets:
+  - terminal
+  - file
+  - todo
+  - clarify
+skills:
+  disabled:
+    - multiverse-outlook-read
+    - multiverse-slack-read
+approvals:
+  mode: manual
+  timeout: 300
+  cron_mode: deny
+  single_query_mode: deny
+  deny:
+    - '*git push*'
+    - '*gh pr create*'
+    - '*gh issue create*'
+    - '*gh pr merge*'
+    - '*gh issue close*'
+    - '*glab mr create*'
+    - '*glab issue create*'
+    - '*git add*'
+    - '*git commit*'
+    - '*rm -rf*'
+    - '*--force*'
+timezone: Europe/Madrid
+terminal:
+  cwd: "."

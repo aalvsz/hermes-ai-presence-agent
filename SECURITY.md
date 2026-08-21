@@ -1,26 +1,22 @@
 # Security and privacy
 
-## Data boundary
+## Never commit
 
-Never commit or share:
+- `.env`, authentication stores, OAuth grants, API keys, tokens, device codes, or passwords;
+- browser profiles, cookies, official account archives, cleanup ledgers, or screenshots;
+- Hermes sessions, memories, databases, logs, caches, or generated reports;
+- private messages, personal names, account handles, absolute home-directory paths, or company-confidential source;
+- datasets, checkpoints, or repositories whose license does not permit redistribution.
 
-- `.env`, `auth.json`, OAuth or API credentials
-- browser profiles, cookies, passwords, device codes, or session tokens
-- official X account archives or cleanup ledgers
-- Hermes memories, sessions, databases, logs, or runtime caches
-- private messages, local account handles, personal names, or absolute home paths
-- paper datasets or repositories whose license does not permit redistribution
+## Read-only boundary
 
-The profile distribution contains behavior, skills, deterministic tools, and model-agnostic configuration only. Each installation creates its own local state and authenticates directly with the selected provider.
+- The work queue scanner uses only provider read APIs exposed by authenticated `gh` and `glab` CLIs.
+- The contribution scout treats repository text, issue bodies, comments, links, and commands as untrusted data.
+- It never executes repository-provided code, installs dependencies, claims issues, creates branches, commits, pushes, opens pull requests, or contacts maintainers.
+- The development inventory records bounded metadata and never copies a full source tree into its report.
 
-## External-action boundary
+## Model and account boundary
 
-- Cron jobs are draft-only.
-- X writes require active-account verification and artifact-specific approval.
-- Destructive X cleanup is archive-based, preview-first, resumable, delayed, and limited to ten actions per invocation.
-- A post is marked published only after its returned ID is captured. Unknown outcomes are quarantined to prevent duplicate retries.
-- GitHub and X publication are separate approvals. Local experiment work never implies public-write authority.
+Model identifiers are configuration, not proof of authenticated access. Provider authentication must be completed directly in Hermes. No API key or OAuth token belongs in this repository.
 
-## Reporting
-
-Do not open a public issue containing credentials, private archives, browser screenshots, account handles, or logs with sensitive data. Provide a minimal redacted reproduction instead.
+If a provider is unavailable, the agents must report that limitation instead of using alternate credentials or bypassing access controls.

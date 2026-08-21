@@ -20,15 +20,8 @@ hermes profile show "$profile_name" >/dev/null
 hermes -p "$profile_name" config set model.provider "$provider"
 hermes -p "$profile_name" config set model.default "$model"
 hermes -p "$profile_name" config set --force agent.reasoning_effort "$reasoning"
-hermes -p "$profile_name" config set delegation.provider "$provider"
-hermes -p "$profile_name" config set delegation.model "$model"
-hermes -p "$profile_name" config set delegation.reasoning_effort "$reasoning"
-hermes -p "$profile_name" config set delegation.max_concurrent_children 3
-hermes -p "$profile_name" config set delegation.max_spawn_depth 1
-hermes -p "$profile_name" config set delegation.subagent_auto_approve false
 
 echo
-echo "Model configuration saved for '$profile_name'."
-echo "Authenticate directly with the provider, then activate the schedules:"
+echo "Model identifiers saved for '$profile_name'."
+echo "Authenticate directly through Hermes if needed:"
 echo "  hermes -p '$profile_name' auth add '$provider'"
-echo "  $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/activate-profile.sh '$profile_name'"

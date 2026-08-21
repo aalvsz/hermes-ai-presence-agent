@@ -1,0 +1,11 @@
+description: Read-only summaries of open GitHub and GitLab work assigned to the authenticated user.
+description_auto: false
+display_name: Work Queue Briefing
+ui_meta:
+  hermes-bots:
+    title: Work Queue Briefing
+    shape: squircle
+    color: '#2563eb'
+    groups:
+      - Multiverse Work Office
+    group: Multiverse Work Office
