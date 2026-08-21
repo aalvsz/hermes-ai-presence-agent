@@ -1,0 +1,12 @@
+name: contribution-reputation-scout
+version: 0.2.0
+description: "Read-only contribution discovery matched to a local development repository inventory."
+hermes_requires: ">=0.20.1"
+license: MIT
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - profile.yaml
+  - tools/
+  - config/
+  - distribution.yaml

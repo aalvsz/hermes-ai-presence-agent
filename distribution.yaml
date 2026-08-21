@@ -1,12 +1,12 @@
-name: ai-presence
-version: 0.1.0
-description: "Evidence-led AI/ML news, guarded X curation, and paper reimplementation with approval-gated public actions."
+name: multiverse-work-office
+version: 0.2.0
+description: "Two guarded Hermes profiles for assigned-work briefings and read-only contribution discovery."
 hermes_requires: ">=0.20.1"
 license: MIT
 distribution_owned:
-  - SOUL.md
-  - config.yaml
-  - skills/
+  - README.md
+  - SECURITY.md
+  - profiles/
   - tools/
   - config/
   - scripts/

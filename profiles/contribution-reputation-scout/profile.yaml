@@ -1,0 +1,11 @@
+description: Read-only contribution discovery matched to a local development repository inventory.
+description_auto: false
+display_name: Contribution Reputation Scout
+ui_meta:
+  hermes-bots:
+    title: Contribution Reputation Scout
+    shape: hexagon
+    color: '#f59e0b'
+    groups:
+      - Multiverse Work Office
+    group: Multiverse Work Office

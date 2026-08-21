@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "defaults": {
+    "lookback_days": 180,
+    "stale_issue_days": 120,
+    "max_closed_pull_requests": 100,
+    "max_candidates_per_repository": 10
+  },
+  "interests": [
+    "computer vision",
+    "model compression",
+    "quantization",
+    "pruning",
+    "inference",
+    "deployment",
+    "CUDA",
+    "PyTorch",
+    "Python",
+    "C++",
+    "transformers",
+    "evaluation",
+    "documentation"
+  ],
+  "repositories": [
+    {
+      "repo": "google-gemini/cookbook",
+      "group": "company",
+      "guide": "https://github.com/google-gemini/cookbook/blob/main/CONTRIBUTING.md"
+    },
+    {
+      "repo": "google/adk-python",
+      "group": "company",
+      "guide": "https://github.com/google/adk-python/blob/main/CONTRIBUTING.md",
+      "notes": "Copybara imports may close accepted external pull requests instead of marking them merged; validate maintainer labels and mirrored commits manually."
+    },
+    {
+      "repo": "google-gemini/gemini-cli",
+      "group": "company",
+      "guide": "https://github.com/google-gemini/gemini-cli/blob/main/CONTRIBUTING.md"
+    },
+    {
+      "repo": "google/gemma.cpp",
+      "group": "company"
+    },
+    {
+      "repo": "googleapis/python-genai",
+      "group": "company"
+    },
+    {
+      "repo": "NVIDIA/DALI",
+      "group": "company",
+      "guide": "https://github.com/NVIDIA/DALI/blob/main/CONTRIBUTING.md"
+    },
+    {
+      "repo": "NVIDIA/Megatron-LM",
+      "group": "company",
+      "guide": "https://github.com/NVIDIA/Megatron-LM/blob/main/docs/developer/contribute.md"
+    },
+    {
+      "repo": "NVIDIA/TransformerEngine",
+      "group": "company"
+    },
+    {
+      "repo": "NVIDIA/TensorRT-LLM",
+      "group": "company"
+    },
+    {
+      "repo": "ultralytics/ultralytics",
+      "group": "stack"
+    },
+    {
+      "repo": "vllm-project/vllm",
+      "group": "stack",
+      "guide": "https://github.com/vllm-project/vllm/blob/main/docs/contributing/README.md"
+    },
+    {
+      "repo": "ggml-org/llama.cpp",
+      "group": "stack",
+      "guide": "https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md"
+    },
+    {
+      "repo": "unslothai/unsloth",
+      "group": "stack",
+      "notes": "No substantial contribution guide was found during the initial investigation; treat process accessibility as unknown until revalidated."
+    },
+    {
+      "repo": "huggingface/transformers",
+      "group": "stack",
+      "guide": "https://github.com/huggingface/transformers/blob/main/CONTRIBUTING.md"
+    },
+    {
+      "repo": "huggingface/diffusers",
+      "group": "stack",
+      "guide": "https://github.com/huggingface/diffusers/blob/main/CONTRIBUTING.md"
+    },
+    {
+      "repo": "openvinotoolkit/openvino",
+      "group": "stack",
+      "guide": "https://github.com/openvinotoolkit/openvino/blob/master/CONTRIBUTING.md",
+      "notes": "The project also documents a claim-based Google Summer of Code path in its wiki; treat that as a separate optional workflow."
+    },
+    {
+      "repo": "pytorch/pytorch",
+      "group": "stack"
+    },
+    {
+      "repo": "jax-ml/jax",
+      "group": "stack"
+    },
+    {
+      "repo": "ml-explore/mlx",
+      "group": "stack"
+    },
+    {
+      "repo": "ray-project/ray",
+      "group": "stack"
+    }
+  ]
+}

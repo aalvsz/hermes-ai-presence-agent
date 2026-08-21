@@ -1,122 +1,88 @@
-# Hermes AI Presence Agent
+# Hermes Multiverse Work Office
 
-A portable [Nous Research Hermes Agent](https://github.com/NousResearch/hermes-agent) distribution for evidence-led AI/ML publishing. It coordinates three isolated specialists:
+A portable, privacy-conscious Hermes setup with exactly two simple office bots:
 
-1. **X account curator** — previews a user-selected date range and, only after exact confirmation, removes posts, replies, reposts, and likes. It can publish one specifically approved draft through an isolated local browser profile.
-2. **AI news scout/editor** — scans primary AI/ML sources, arXiv, Hugging Face Daily Papers, selected subreddits, and Sebastian Raschka's Ahead of AI. Scheduled runs create source-linked drafts only.
-3. **Paper reimplementation lab** — selects a current paper, creates an isolated local experiment, records successes and failures, and prepares approval-gated GitHub and X artifacts.
+1. **Work Queue Briefing** — summarizes open GitHub issues and pull requests plus GitLab issues and merge requests assigned to the authenticated user.
+2. **Contribution Reputation Scout** — periodically catalogs repository metadata under a user-selected development root and matches it to evidence-backed contribution opportunities in major AI/ML repositories.
 
-The parent agent verifies each specialist's evidence before presenting a result. It never treats a compile, smoke test, scheduled job, or publication click as stronger evidence than it actually is.
+Both profiles are read-only and report/draft-only. They do not create child agents, edit source, commit, push, contact maintainers, launch compute, or change GitHub/GitLab state.
 
 ## Privacy model
 
-This repository contains no user identity, account handle, credential, OAuth grant, browser state, private message, local memory, Codex workspace state, or absolute home-directory path. Hermes hard-excludes credential and runtime stores during profile installation; `.gitignore` provides a second boundary for local development.
+This repository contains no user name, account handle, credentials, OAuth grant, browser state, private messages, Codex memory, Hermes sessions, absolute home path, or local runtime report. The local `/dev` catalog records repository metadata only; it does not copy full source trees or execute project code.
 
-Public actions are never inferred:
+Provider authentication remains inside Hermes. Do not commit `.env`, token stores, browser profiles, archives, logs, or generated reports. See [SECURITY.md](SECURITY.md).
 
-- Scheduled jobs create drafts only.
-- X cleanup requires a fresh archive preview, active-account match, exact `DELETE RANGE <start> <end>` confirmation, and batches of at most ten actions.
-- Posting requires `APPROVE POST <draft-id>` and a returned post ID. An unknown result is not retried automatically.
-- GitHub repository creation or push requires a reviewed destination, visibility, license, commit, tests, claims, and disclosure.
+## Install the two profiles
 
-See [SECURITY.md](SECURITY.md) for the threat model and [docs/github-agent-investigation.md](docs/github-agent-investigation.md) for the design research.
-
-## Install as a Hermes distribution
-
-Prerequisites: Hermes Agent `>=0.20.1`, Python `>=3.11`, Node.js `>=20`, npm, and Chromium support.
+Prerequisites: Hermes Agent `>=0.20.1`, Python `>=3.11`, Git, and authenticated read-only `gh`/`glab` CLIs for the providers you want to scan.
 
 ```bash
-git clone REPOSITORY_URL hermes-ai-presence-agent
+git clone https://github.com/aalvsz/hermes-ai-presence-agent.git
 cd hermes-ai-presence-agent
-./scripts/bootstrap-profile.sh ai-presence
+./scripts/bootstrap-office.sh
 ```
 
-The bootstrap installs or updates the `ai-presence` profile, creates its command alias, installs locked Node dependencies, installs Playwright Chromium, and runs the local test suite. It does not request or copy credentials.
-
-## Plug in a model
-
-Configure any Hermes-supported provider/model pair:
+Configure the requested model identifiers for both profiles. Authentication happens through Hermes and is never stored in this repository:
 
 ```bash
-./scripts/configure-model.sh ai-presence PROVIDER MODEL xhigh
+./scripts/configure-model.sh work-queue-briefing openai-codex gpt-5.6-luna xhigh
+./scripts/configure-model.sh contribution-reputation-scout openai-codex gpt-5.6-luna xhigh
 ```
 
-For a ChatGPT/Codex subscription-backed model, one example is:
+Then authenticate directly through Hermes, if needed:
 
 ```bash
-./scripts/configure-model.sh ai-presence openai-codex gpt-5.6-luna xhigh
-ai-presence auth add openai-codex
+hermes -p work-queue-briefing auth add openai-codex
+hermes -p contribution-reputation-scout auth add openai-codex
 ```
 
-Authentication is completed directly through the provider's interactive flow. No API key or token belongs in this repository.
+The profiles remain usable as read-only assistants even when one provider is unavailable; the affected provider is reported as unavailable.
 
-After a real one-shot model probe succeeds, install the draft-only schedules and start the local gateway:
+## Work Queue Briefing
+
+Run a live metadata-only summary:
 
 ```bash
-./scripts/activate-profile.sh ai-presence
+hermes -p work-queue-briefing
 ```
 
-This creates two daily news-draft jobs and one weekly paper-candidate job, pins them to the configured provider/model, and starts the Hermes user service. It does not schedule publishing, replying, liking, following, deletion, GitHub creation, or GitHub pushes.
-
-## Verify
+Ask it to refresh the queue. The underlying scanner is:
 
 ```bash
-ai-presence config show
-ai-presence skills list --enabled-only
-ai-presence cron list
-ai-presence gateway status
-
-# Non-mutating model probe
-ai-presence --provider PROVIDER --model MODEL --reasoning xhigh \
-  --toolsets safe --oneshot "Reply with exactly: MODEL_OK"
+python3 tools/work_queue_scan.py --output-dir runtime/work-queue
 ```
 
-Never silently substitute another model if the requested model is unavailable.
+The scanner uses the authenticated `gh` and `glab` CLIs, requests only open assigned-item metadata, and never fetches descriptions, comments, diffs, files, artifacts, or credentials.
 
-## Local tools
+## Contribution Reputation Scout
+
+Set the development root locally and schedule the read-only scan twice weekly:
 
 ```bash
-# Current news as normalized JSON
-python3 tools/news_scout.py --since-hours 72 --limit 40 --per-source-limit 12
-
-# Create and inspect a draft
-python3 tools/content_queue.py enqueue --kind tweet \
-  --text "Draft text" --source https://example.com
-python3 tools/content_queue.py list
-
-# Preview an official X archive; no account action occurs
-cd tools/x
-node src/cleanup-cli.mjs --archive /path/to/twitter-archive.zip \
-  --start 2025-01-01 --end 2025-12-31 --timezone Europe/Madrid
-
-# Establish the isolated X browser login interactively
-node src/publish-cli.mjs login
+./scripts/schedule-scout.sh /path/to/dev
 ```
 
-Runtime state defaults to `runtime/` and is ignored by Git. Override it with `HERMES_PRESENCE_RUNTIME` when needed.
+The scheduler writes the selected path only to the local Hermes profile, not to Git. It runs Monday and Thursday at 08:15 in the configured local timezone. Each run:
 
-## Approval examples
-
-Approve and publish exactly one draft:
+1. inventories repository paths, Git state, languages, manifests, and sanitized origins;
+2. scans the configured public Google, NVIDIA, Ultralytics, vLLM, llama.cpp, Unsloth, Hugging Face, PyTorch, JAX, MLX, Ray, and related repositories;
+3. ranks contribution friendliness using current public evidence;
+4. writes a local report and recommends a small number of candidates.
 
 ```bash
-python3 tools/content_queue.py approve DRAFT_ID \
-  --confirmation "APPROVE POST DRAFT_ID"
-cd tools/x
-node src/publish-cli.mjs post --id DRAFT_ID --username YOUR_X_HANDLE
+python3 tools/dev_inventory.py --root /path/to/dev --output-dir runtime/dev-inventory
+python3 tools/github_scout.py --config config/repositories.json --output-dir runtime/scans
+hermes -p contribution-reputation-scout
 ```
 
-Execute at most ten reviewed cleanup actions:
+The score is **contribution friendliness**, never acceptance probability. Missing evidence, stale issues, assignments, linked work, unclear process, or large compute requirements lower confidence. Discovery never claims issues or opens pull requests.
+
+## Tests
 
 ```bash
-cd tools/x
-node src/cleanup-cli.mjs --archive /path/to/twitter-archive.zip \
-  --start 2025-01-01 --end 2025-12-31 --timezone Europe/Madrid \
-  --limit 10 --execute
+python3 -m unittest discover -s tests -v
+python3 -m py_compile tools/*.py
 ```
 
-Likes are selected using the liked post's publication timestamp because the official X archive normally omits the time when the Like action occurred.
-
-## Evidence boundary
-
-Tests establish parsing, queuing, installation structure, and fail-closed behavior. They do not establish that current X UI selectors work against a real account, that a provider subscription permits a requested model, that a scheduled draft was published, or that a paper result reproduces the original claim. Those require separate live verification and receipts.
+The tests cover parsing, redaction boundaries, provider failure handling, metadata-only inventory, and bounded reports. They do not prove external account permissions or maintainer acceptance.
